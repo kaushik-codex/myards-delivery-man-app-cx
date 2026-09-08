@@ -156,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ConfirmationDialogWidget(
           icon: Images.warning,
           title: 'Floating Order Alerts',
-          description: 'Allow 6amMart Delivery to display floating alerts over other apps so you never miss a new delivery request.',
+          description: 'Allow ${AppConstants.appName} to display floating alerts over other apps so you never miss a new delivery request.',
           onYesPressed: () async {
             Get.back();
             await FlutterOverlayWindow.requestPermission();
