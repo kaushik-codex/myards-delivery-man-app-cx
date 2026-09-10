@@ -3,7 +3,7 @@ import 'package:sixam_mart_delivery/util/enums.dart';
 import 'package:sixam_mart_delivery/util/images.dart';
 
 class AppConstants {
-  static const String appName = '6amMart Delivery';
+  static const String appName = 'Myards Delivery Man';
   static const double appVersion = 4.0; // Flutter SDK 3.44.2
   static const String fontFamily = 'Roboto';
   static const AppMode appMode = AppMode.delivery;

@@ -43,7 +43,8 @@ class _OrderLocationScreenState extends State<OrderLocationScreen> {
 
           GoogleMap(
             initialCameraPosition: CameraPosition(target: LatLng(
-              double.parse(widget.orderModel.deliveryAddress?.latitude ?? '0'), double.parse(widget.orderModel.deliveryAddress?.longitude ?? '0'),
+              double.tryParse(widget.orderModel.deliveryAddress?.latitude ?? '0') ?? 0,
+              double.tryParse(widget.orderModel.deliveryAddress?.longitude ?? '0') ?? 0,
             ), zoom: 16),
             minMaxZoomPreference: const MinMaxZoomPreference(0, 16),
             zoomControlsEnabled: false,

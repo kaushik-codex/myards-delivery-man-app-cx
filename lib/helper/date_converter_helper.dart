@@ -24,7 +24,11 @@ class DateConverterHelper {
   }
 
   static DateTime dateTimeStringToDate(String dateTime) {
-    return DateFormat('yyyy-MM-dd HH:mm:ss').parse(dateTime);
+    try {
+      return DateFormat('yyyy-MM-dd HH:mm:ss').parse(dateTime);
+    } catch (_) {
+      return DateTime.tryParse(dateTime) ?? DateTime.now();
+    }
   }
 
   static DateTime convertStringToDatetime(String dateTime) {
@@ -155,7 +159,12 @@ class DateConverterHelper {
 
   static String beforeTimeFormat(String time, {DateTime? now, int showFullDateThreshold = 30, bool isWithUTC = false}) {
     final currentTime = now ?? DateTime.now();
-    DateTime pastTime = isWithUTC ? DateTime.parse(time) : dateTimeStringToDate(time);
+    DateTime pastTime;
+    try {
+      pastTime = isWithUTC ? DateTime.parse(time) : dateTimeStringToDate(time);
+    } catch (_) {
+      pastTime = DateTime.tryParse(time) ?? currentTime;
+    }
     final Duration difference = currentTime.difference(pastTime);
 
     if (difference.isNegative) {

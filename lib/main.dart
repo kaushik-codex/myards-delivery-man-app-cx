@@ -20,6 +20,8 @@ import 'helper/get_di.dart' as di;
 import 'package:sixam_mart_delivery/features/delivery_module/order/widgets/floating_order_overlay_widget.dart';
 
 import 'package:sixam_mart_delivery/helper/floating_overlay_helper.dart';
+import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 
 /// Top-level overlay entry point directly declared in root main.dart
 @pragma("vm:entry-point")
@@ -37,6 +39,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if(GetPlatform.isAndroid) {
+    final GoogleMapsFlutterPlatform mapsImplementation = GoogleMapsFlutterPlatform.instance;
+    if (mapsImplementation is GoogleMapsFlutterAndroid) {
+      mapsImplementation.useAndroidViewSurface = true;
+    }
     await Firebase.initializeApp(
       options: const FirebaseOptions(
         apiKey: "YOUR_FIREBASE_API_KEY",
