@@ -58,3 +58,29 @@ This report documents the design, implementation, and verification of the modern
    * Switching the status from the homepage updates the state in memory.
    * Navigating to the Profile page tab displays the identical active/inactive state on the Profile switch.
    * Conversely, toggling from the Profile switch immediately updates the homepage pill toggle when switching back to the Home tab.
+
+---
+
+## 4. Git Commit & Push Audit
+
+* **Target Branch**: `main`
+* **Remote Repository**: `origin (git@github-second:kaushik-codex/myards-delivery-man-app-cx.git)`
+* **Commit Hash**: `a698c6d`
+* **Commit Subject**: `feat: add modern pill-shaped active-status toggle to homepage header`
+* **Push Status**: `b2d06f1..a698c6d main -> main` (Successfully pushed)
+
+---
+
+## 5. Security & Sensitive Key Sanitization Audit
+
+All sensitive and private API keys across Android, iOS, Web, and Flutter were audited and sanitized with standard placeholders prior to pushing:
+
+| File Location | Parameter Sanitized | Placeholder Value Set |
+| :--- | :--- | :--- |
+| `android/app/src/main/AndroidManifest.xml` | `com.google.android.geo.API_KEY` | `"YOUR_GOOGLE_MAPS_API_KEY"` |
+| `ios/Runner/AppDelegate.swift` | `GMSServices.provideAPIKey(...)` | `"YOUR_GOOGLE_MAPS_API_KEY"` |
+| `lib/main.dart` | `FirebaseOptions.apiKey / appId / messagingSenderId / projectId` | `"YOUR_FIREBASE_API_KEY"`, etc. |
+| `lib/util/app_constants.dart` | `AppConstants.polylineMapKey` | `'YOUR_GOOGLE_MAPS_API_KEY'` |
+| `web/firebase-messaging-sw.js` | Firebase web configuration | `"YOUR_FIREBASE_API_KEY"`, etc. |
+| `web/index.html` | Firebase web initialization config | `"YOUR_FIREBASE_API_KEY"`, etc. |
+
