@@ -24,12 +24,14 @@ class OrderController extends GetxController implements GetxService {
 
   List<OrderModel>? _currentOrderList;
   List<OrderModel>? get currentOrderList => _currentOrderList;
+  set currentOrderList(List<OrderModel>? list) => _currentOrderList = list;
   
   List<OrderModel>? _completedOrderList;
   List<OrderModel>? get completedOrderList => _completedOrderList;
   
   List<OrderModel>? _latestOrderList;
   List<OrderModel>? get latestOrderList => _latestOrderList;
+  set latestOrderList(List<OrderModel>? list) => _latestOrderList = list;
   
   List<OrderDetailsModel>? _orderDetailsModel;
   List<OrderDetailsModel>? get orderDetailsModel => _orderDetailsModel;

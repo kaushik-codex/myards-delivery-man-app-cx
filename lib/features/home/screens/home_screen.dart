@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,6 +22,7 @@ import 'package:sixam_mart_delivery/features/ride_module/trip/controllers/trip_c
 import 'package:sixam_mart_delivery/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart_delivery/helper/route_helper.dart';
 import 'package:sixam_mart_delivery/util/app_constants.dart';
+import 'package:sixam_mart_delivery/features/home/widgets/online_status_toggle_widget.dart';
 import 'package:sixam_mart_delivery/util/dimensions.dart';
 import 'package:sixam_mart_delivery/util/enums.dart';
 import 'package:sixam_mart_delivery/util/images.dart';
@@ -167,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _testFloatingOverlay() async {
+    if (!kDebugMode) return;
     FloatingOverlayHelper.initListener();
 
     bool isGranted = await FlutterOverlayWindow.isPermissionGranted();
@@ -175,35 +178,32 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    showCustomSnackBar('Minimize the app now! Overlay appearing in 3 seconds...', isError: false);
+    const int mockId = FloatingOverlayHelper.mockOrderId;
+    final OrderModel mockOrder = FloatingOverlayHelper.createMockOrderModel();
 
-    Future.delayed(const Duration(seconds: 3), () async {
+    // Inject mock order into OrderController in-memory for testing
+    if (Get.isRegistered<OrderController>()) {
+      final oc = Get.find<OrderController>();
+      oc.latestOrderList ??= [];
+      // Remove any prior mock instance to support clean repeated dispatch
+      oc.latestOrderList!.removeWhere((o) => o.id == mockId);
+      oc.latestOrderList!.insert(0, mockOrder);
+      oc.update();
+    }
+
+    showCustomSnackBar('Mock order dispatched! Minimize the app if desired, overlay appearing in 2 seconds...', isError: false);
+
+    Future.delayed(const Duration(seconds: 2), () async {
       try {
         if (await FlutterOverlayWindow.isActive()) {
           await FlutterOverlayWindow.closeOverlay();
           await Future.delayed(const Duration(milliseconds: 300));
         }
 
-        // Check if there is an active order in latestOrderList to test with real data
-        OrderModel? sampleOrder;
-        if (Get.isRegistered<OrderController>()) {
-          final oc = Get.find<OrderController>();
-          if (oc.latestOrderList != null && oc.latestOrderList!.isNotEmpty) {
-            sampleOrder = oc.latestOrderList!.first;
-          }
-        }
-
-        String orderId = sampleOrder?.id?.toString() ?? '100234';
-        String storeName = sampleOrder?.deliveryAddress?.contactPersonName ?? 'Pizza Hub (Downtown Branch)';
-        String orderAmount = sampleOrder?.orderAmount != null ? '\$${sampleOrder!.orderAmount}' : '\$32.50';
-        String deliveryAddress = sampleOrder?.deliveryAddress?.address ?? '742 Evergreen Terrace, Sector 4, Springfield';
-        String lat = sampleOrder?.deliveryAddress?.latitude ?? '23.8103';
-        String lng = sampleOrder?.deliveryAddress?.longitude ?? '90.4125';
-
         await FlutterOverlayWindow.showOverlay(
           enableDrag: false,
           overlayTitle: "New Order Request",
-          overlayContent: 'Order #$orderId',
+          overlayContent: 'Order #$mockId',
           flag: OverlayFlag.defaultFlag,
           alignment: OverlayAlignment.center,
           visibility: NotificationVisibility.visibilityPublic,
@@ -212,20 +212,20 @@ class _HomeScreenState extends State<HomeScreen> {
           width: WindowSize.matchParent,
         );
 
-        print("====> [HomeScreen] FlutterOverlayWindow.showOverlay launched for order #$orderId");
+        print("====> [HomeScreen] FlutterOverlayWindow.showOverlay launched for mock order #$mockId");
 
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 500));
         await FlutterOverlayWindow.shareData(jsonEncode({
-          'order_id': orderId,
-          'store_name': storeName,
-          'order_amount': orderAmount,
-          'delivery_address': deliveryAddress,
-          'latitude': lat,
-          'longitude': lng,
-          'store_lat': '23.8150',
-          'store_lng': '90.4150',
+          'order_id': mockId.toString(),
+          'store_name': mockOrder.storeName ?? 'Mock Pizza Hub (Downtown)',
+          'order_amount': '₹499',
+          'delivery_address': mockOrder.deliveryAddress?.address ?? '742 Evergreen Terrace, Sector 4, Springfield',
+          'latitude': mockOrder.deliveryAddress?.latitude ?? '23.8103',
+          'longitude': mockOrder.deliveryAddress?.longitude ?? '90.4125',
+          'store_lat': mockOrder.storeLat ?? '23.8150',
+          'store_lng': mockOrder.storeLng ?? '90.4150',
         }));
-        print("====> [HomeScreen] FlutterOverlayWindow.shareData dispatched payload");
+        print("====> [HomeScreen] FlutterOverlayWindow.shareData dispatched mock payload");
       } catch (e, stack) {
         debugPrint("====> FlutterOverlayWindow error: $e\n$stack");
         showCustomSnackBar("Overlay error: $e", isError: true);
@@ -274,11 +274,14 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeDefault,
           )),
           actions: [
-            IconButton(
-              icon: Icon(Icons.picture_in_picture_alt, size: 24, color: Theme.of(context).primaryColor),
-              tooltip: 'Test Floating Overlay',
-              onPressed: () => _testFloatingOverlay(),
-            ),
+            const Center(child: OnlineStatusToggleWidget()),
+            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+            if (kDebugMode)
+              IconButton(
+                icon: Icon(Icons.picture_in_picture_alt, size: 24, color: Theme.of(context).primaryColor),
+                tooltip: 'Test Floating Overlay',
+                onPressed: () => _testFloatingOverlay(),
+              ),
             IconButton(
               icon: GetBuilder<NotificationController>(builder: (notificationController) {
                 return Stack(children: [

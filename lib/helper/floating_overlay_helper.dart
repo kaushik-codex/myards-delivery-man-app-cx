@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart' hide NotificationVisibility;
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
@@ -16,9 +17,64 @@ import 'package:sixam_mart_delivery/helper/route_helper.dart';
 
 class FloatingOverlayHelper {
   static const String portName = 'floating_overlay_port';
+  static const int mockOrderId = 999999;
   static ReceivePort? _receivePort;
   static StreamSubscription? _subscription;
   static bool _foregroundCallbackRegistered = false;
+
+  /// Deterministic mock order generator for isolated local overlay testing
+  static OrderModel createMockOrderModel({
+    int id = mockOrderId,
+    String storeName = 'Mock Pizza Hub (Downtown)',
+    String storeAddress = '742 Evergreen Terrace, Sector 4, Springfield',
+    String deliveryAddress = '742 Evergreen Terrace, Sector 4, Springfield',
+    double orderAmount = 499.0,
+    String customerName = 'Test Customer',
+    String customerPhone = '+91 9876543210',
+    String lat = '23.8103',
+    String lng = '90.4125',
+    String storeLat = '23.8150',
+    String storeLng = '90.4150',
+  }) {
+    final String nowIso = DateTime.now().toIso8601String();
+    return OrderModel(
+      id: id,
+      orderAmount: orderAmount,
+      orderStatus: 'pending',
+      orderType: 'delivery',
+      storeLat: storeLat,
+      storeLng: storeLng,
+      storeName: storeName,
+      storeAddress: storeAddress,
+      storePhone: '+91 9876500000',
+      createdAt: nowIso,
+      originalDeliveryCharge: 40.0,
+      deliveryCharge: 40.0,
+      dmTips: 0.0,
+      paymentMethod: 'cash_on_delivery',
+      customer: Customer(
+        id: 101,
+        fName: 'Test',
+        lName: 'Customer',
+        phone: customerPhone,
+        email: 'testcustomer@example.com',
+      ),
+      deliveryAddress: DeliveryAddress(
+        address: deliveryAddress,
+        latitude: lat,
+        longitude: lng,
+        contactPersonName: customerName,
+        contactPersonNumber: customerPhone,
+      ),
+      receiverDetails: DeliveryAddress(
+        address: deliveryAddress,
+        latitude: lat,
+        longitude: lng,
+        contactPersonName: customerName,
+        contactPersonNumber: customerPhone,
+      ),
+    );
+  }
 
   /// Initializes listening for messages sent from the floating overlay window
   static void initListener() {
@@ -160,6 +216,35 @@ class FloatingOverlayHelper {
     }
     final OrderController orderController = Get.find<OrderController>();
 
+    // Isolated Mock Order Intercept (Option A)
+    if (kDebugMode && orderId == mockOrderId) {
+      print('====> [FloatingOverlayHelper] Mock order #$mockOrderId accepted locally');
+      int idx = orderController.latestOrderList?.indexWhere((o) => o.id == mockOrderId) ?? -1;
+      OrderModel mockModel;
+      if (idx != -1) {
+        mockModel = orderController.latestOrderList!.removeAt(idx);
+      } else {
+        mockModel = createMockOrderModel();
+      }
+      mockModel.orderStatus = 'accepted';
+      orderController.currentOrderList ??= [];
+      orderController.currentOrderList!.removeWhere((o) => o.id == mockOrderId);
+      orderController.currentOrderList!.add(mockModel);
+      orderController.update();
+
+      showCustomSnackBar('Mock Order #$mockOrderId accepted! Running order simulated.', isError: false);
+
+      Future.delayed(const Duration(milliseconds: 250), () {
+        Get.to(() => OrderLocationScreen(
+          orderModel: mockModel,
+          orderController: orderController,
+          index: (orderController.currentOrderList?.length ?? 1) - 1,
+          onTap: () {},
+        ));
+      });
+      return;
+    }
+
     // Check if the order is already in latestOrderList
     int index = orderController.latestOrderList?.indexWhere((o) => o.id == orderId) ?? -1;
     print('====> [FloatingOverlayHelper] Order #$orderId initial index in latestOrderList: $index');
@@ -260,6 +345,20 @@ class FloatingOverlayHelper {
     }
     final OrderController orderController = Get.find<OrderController>();
 
+    // Isolated Mock Order Intercept (Option A)
+    if (kDebugMode && orderId == mockOrderId) {
+      print('====> [FloatingOverlayHelper] Mock order #$mockOrderId declined locally');
+      int idx = orderController.latestOrderList?.indexWhere((o) => o.id == mockOrderId) ?? -1;
+      if (idx != -1) {
+        orderController.ignoreOrder(idx);
+      } else {
+        orderController.latestOrderList?.removeWhere((o) => o.id == mockOrderId);
+        orderController.update();
+      }
+      showCustomSnackBar('order_ignored'.tr, isError: false);
+      return;
+    }
+
     int index = orderController.latestOrderList?.indexWhere((o) => o.id == orderId) ?? -1;
     print('====> [FloatingOverlayHelper] Decline order #$orderId index: $index');
     if (index != -1) {
@@ -301,6 +400,25 @@ class FloatingOverlayHelper {
           onTap: () {},
         ));
       });
+    }
+
+    // Isolated Mock Order Intercept (Option A)
+    if (kDebugMode && orderId == mockOrderId) {
+      print('====> [FloatingOverlayHelper] Mock order #$mockOrderId view on maps');
+      int idx = orderController.latestOrderList?.indexWhere((o) => o.id == mockOrderId) ?? -1;
+      OrderModel mockModel;
+      if (idx != -1) {
+        mockModel = orderController.latestOrderList![idx];
+      } else {
+        int cIdx = orderController.currentOrderList?.indexWhere((o) => o.id == mockOrderId) ?? -1;
+        if (cIdx != -1) {
+          mockModel = orderController.currentOrderList![cIdx];
+        } else {
+          mockModel = createMockOrderModel();
+        }
+      }
+      openMapScreen(mockModel, 0);
+      return;
     }
 
     if (orderId != null) {
