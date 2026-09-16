@@ -2,7 +2,7 @@
 
 **Date**: 16 September 2026  
 **Project**: 6amMart Delivery Man App (Flutter / Android / iOS)  
-**Status**: Completed & Verified  
+**Status**: Completed, Audited & Pushed  
 
 ---
 
@@ -61,3 +61,27 @@ This report documents the minimal, safe architectural fix resolving the active-s
 - **Unit & Widget Tests**: `flutter test test/active_status_toggle_test.dart` completed with **All tests passed (2/2)**:
   1. `Rapid repeated calls trigger only ONE request and prevent race condition` — PASSED.
   2. `Failure outcome restores interactive state without leaving lock engaged` — PASSED.
+
+---
+
+## 4. Git Commit & Push Audit
+
+* **Target Branch**: `main`
+* **Remote Repository**: `origin (git@github-second:kaushik-codex/myards-delivery-man-app-cx.git)`
+* **Primary Feature Commit**: `247fece` (`fix: resolve active-status toggle race condition with tap lock and inline loader`)
+* **Push Status**: `54b16dd..247fece main -> main` (Successfully pushed)
+
+---
+
+## 5. Security & Sensitive Key Sanitization Audit
+
+All sensitive and private API keys across Android, iOS, Web, and Flutter were audited and sanitized with standard placeholders prior to pushing, and then fully reverted to their operational keys in the local environment:
+
+| File Location | Parameter Sanitized in Remote | Placeholder Value Committed | Local State Restored |
+| :--- | :--- | :--- | :--- |
+| `android/app/src/main/AndroidManifest.xml` | `com.google.android.geo.API_KEY` | `"YOUR_GOOGLE_MAPS_API_KEY"` | Operational Key Restored |
+| `ios/Runner/AppDelegate.swift` | `GMSServices.provideAPIKey(...)` | `"YOUR_GOOGLE_MAPS_API_KEY"` | Operational Key Restored |
+| `lib/main.dart` | `FirebaseOptions.apiKey / appId / messagingSenderId / projectId` | `"YOUR_FIREBASE_API_KEY"`, etc. | Operational Key Restored |
+| `lib/util/app_constants.dart` | `AppConstants.polylineMapKey` | `'YOUR_GOOGLE_MAPS_API_KEY'` | Operational Key Restored |
+| `web/firebase-messaging-sw.js` | Firebase web configuration | `"YOUR_FIREBASE_API_KEY"`, etc. | Operational Key Restored |
+| `web/index.html` | Firebase web initialization config | `"YOUR_FIREBASE_API_KEY"`, etc. | Operational Key Restored |
