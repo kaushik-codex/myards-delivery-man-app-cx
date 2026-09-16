@@ -210,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               value: profileController.profileModel!.active == 1,
                               activeTrackColor: Theme.of(context).primaryColor,
                               inactiveTrackColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                              onChanged: (bool isActive) async {
+                              onChanged: profileController.isActiveStatusLoading ? null : (bool isActive) async {
                                 if(!isRideActive && !isActive && (orderController.currentOrderList?.isNotEmpty ?? false)) {
                                   showCustomBottomSheet(
                                     child: CustomConfirmationBottomSheet(

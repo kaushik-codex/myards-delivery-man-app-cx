@@ -27,6 +27,9 @@ class ProfileController extends GetxController implements GetxService {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  bool _isActiveStatusLoading = false;
+  bool get isActiveStatusLoading => _isActiveStatusLoading;
+
   XFile? _pickedFile;
   XFile? get pickedFile => _pickedFile;
 
@@ -95,21 +98,30 @@ class ProfileController extends GetxController implements GetxService {
   }
 
   Future<bool> updateActiveStatus() async {
-    ResponseModel responseModel = await profileServiceInterface.updateActiveStatus();
-    if (responseModel.isSuccess) {
-      Get.back();
-      _profileModel!.active = _profileModel!.active == 0 ? 1 : 0;
-      showCustomSnackBar(responseModel.message, isError: false);
-      if (_profileModel!.active == 1) {
-        profileServiceInterface.checkPermission(() => startLocationRecord());
-      } else {
-        stopLocationRecord();
-      }
-    } else {
-      showCustomSnackBar(responseModel.message, isError: true);
-    }
+    if (_isActiveStatusLoading) return false;
+    _isActiveStatusLoading = true;
     update();
-    return responseModel.isSuccess;
+    try {
+      ResponseModel responseModel = await profileServiceInterface.updateActiveStatus();
+      if (responseModel.isSuccess) {
+        Get.back();
+        _profileModel!.active = _profileModel!.active == 0 ? 1 : 0;
+        showCustomSnackBar(responseModel.message, isError: false);
+        if (_profileModel!.active == 1) {
+          profileServiceInterface.checkPermission(() => startLocationRecord());
+        } else {
+          stopLocationRecord();
+        }
+      } else {
+        showCustomSnackBar(responseModel.message, isError: true);
+      }
+      return responseModel.isSuccess;
+    } catch (e) {
+      return false;
+    } finally {
+      _isActiveStatusLoading = false;
+      update();
+    }
   }
 
   Future deleteDriver() async {

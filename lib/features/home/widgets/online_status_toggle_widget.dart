@@ -17,6 +17,8 @@ import 'package:sixam_mart_delivery/util/styles.dart';
 class OnlineStatusToggleWidget extends StatelessWidget {
   const OnlineStatusToggleWidget({super.key});
 
+  static bool _isSyncing = false;
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ProfileController>(builder: (profileController) {
@@ -27,9 +29,10 @@ class OnlineStatusToggleWidget extends StatelessWidget {
           }
 
           final bool isOnline = profileController.profileModel!.active == 1;
+          final bool isLoading = profileController.isActiveStatusLoading;
 
           return InkWell(
-            onTap: () => _handleToggle(context, profileController, rideController, orderController),
+            onTap: isLoading ? null : () => _handleToggle(context, profileController, rideController, orderController),
             borderRadius: BorderRadius.circular(20),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -79,6 +82,20 @@ class OnlineStatusToggleWidget extends StatelessWidget {
                           ),
                         ],
                       ),
+                      child: isLoading
+                          ? Center(
+                              child: SizedBox(
+                                width: 13,
+                                height: 13,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    isOnline ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                 ],
@@ -96,93 +113,97 @@ class OnlineStatusToggleWidget extends StatelessWidget {
     RideController rideController,
     OrderController orderController,
   ) async {
-    if (profileController.profileModel == null) return;
+    if (profileController.profileModel == null || profileController.isActiveStatusLoading || _isSyncing) return;
+    _isSyncing = true;
+    try {
+      final bool isOnline = profileController.profileModel!.active == 1;
+      final bool targetStatus = !isOnline;
+      final bool isRideActive = AppConstants.appMode == AppMode.ride;
+      final bool haveRunningRide = rideController.lastRideDetails != null &&
+          rideController.lastRideDetails!.isNotEmpty &&
+          rideController.lastRideDetails![0].currentStatus != 'completed' &&
+          rideController.lastRideDetails![0].currentStatus != 'cancelled';
 
-    final bool isOnline = profileController.profileModel!.active == 1;
-    final bool targetStatus = !isOnline;
-    final bool isRideActive = AppConstants.appMode == AppMode.ride;
-    final bool haveRunningRide = rideController.lastRideDetails != null &&
-        rideController.lastRideDetails!.isNotEmpty &&
-        rideController.lastRideDetails![0].currentStatus != 'completed' &&
-        rideController.lastRideDetails![0].currentStatus != 'cancelled';
-
-    if (!isRideActive && !targetStatus && (orderController.currentOrderList?.isNotEmpty ?? false)) {
-      showCustomBottomSheet(
-        child: CustomConfirmationBottomSheet(
-          title: 'you_cant_go_offline'.tr,
-          description: 'you_can_not_go_offline_now'.tr,
-          buttonWidget: Padding(
-            padding: const EdgeInsets.only(bottom: 20, top: 10),
-            child: CustomButtonWidget(
-              width: 150,
-              onPressed: () => Get.back(),
-              buttonText: 'okay'.tr,
-            ),
-          ),
-        ),
-      );
-    } else if (isRideActive && !targetStatus && haveRunningRide) {
-      showCustomBottomSheet(
-        child: CustomConfirmationBottomSheet(
-          title: 'you_cant_go_offline'.tr,
-          description: 'you_can_not_go_offline_now_for_ride'.tr,
-          buttonWidget: Padding(
-            padding: const EdgeInsets.only(bottom: 20, top: 10),
-            child: CustomButtonWidget(
-              width: 150,
-              onPressed: () => Get.back(),
-              buttonText: 'okay'.tr,
-            ),
-          ),
-        ),
-      );
-    } else {
-      if (!targetStatus) {
+      if (!isRideActive && !targetStatus && (orderController.currentOrderList?.isNotEmpty ?? false)) {
         showCustomBottomSheet(
           child: CustomConfirmationBottomSheet(
-            title: 'go_offline'.tr,
-            description: 'are_you_sure_to_offline'.tr,
-            image: Images.dmOfflineIcon,
+            title: 'you_cant_go_offline'.tr,
+            description: 'you_can_not_go_offline_now'.tr,
             buttonWidget: Padding(
-              padding: const EdgeInsets.only(
-                left: 40,
-                right: 40,
-                bottom: 20,
-                top: 10,
+              padding: const EdgeInsets.only(bottom: 20, top: 10),
+              child: CustomButtonWidget(
+                width: 150,
+                onPressed: () => Get.back(),
+                buttonText: 'okay'.tr,
               ),
-              child: Row(children: [
-                Expanded(
-                  child: CustomButtonWidget(
-                    onPressed: () {
-                      profileController.updateActiveStatus();
-                    },
-                    buttonText: 'yes_proceed'.tr,
-                  ),
-                ),
-                const SizedBox(width: Dimensions.paddingSizeDefault),
-                Expanded(
-                  child: CustomButtonWidget(
-                    onPressed: () => Get.back(),
-                    buttonText: 'cancel'.tr,
-                    backgroundColor: Theme.of(context).disabledColor.withValues(alpha: 0.1),
-                    fontColor: Theme.of(context).disabledColor,
-                    isBorder: true,
-                  ),
-                ),
-              ]),
+            ),
+          ),
+        );
+      } else if (isRideActive && !targetStatus && haveRunningRide) {
+        showCustomBottomSheet(
+          child: CustomConfirmationBottomSheet(
+            title: 'you_cant_go_offline'.tr,
+            description: 'you_can_not_go_offline_now_for_ride'.tr,
+            buttonWidget: Padding(
+              padding: const EdgeInsets.only(bottom: 20, top: 10),
+              child: CustomButtonWidget(
+                width: 150,
+                onPressed: () => Get.back(),
+                buttonText: 'okay'.tr,
+              ),
             ),
           ),
         );
       } else {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied ||
-            permission == LocationPermission.deniedForever ||
-            (GetPlatform.isIOS ? false : permission == LocationPermission.whileInUse)) {
-          _checkPermission(() => profileController.updateActiveStatus());
+        if (!targetStatus) {
+          showCustomBottomSheet(
+            child: CustomConfirmationBottomSheet(
+              title: 'go_offline'.tr,
+              description: 'are_you_sure_to_offline'.tr,
+              image: Images.dmOfflineIcon,
+              buttonWidget: Padding(
+                padding: const EdgeInsets.only(
+                  left: 40,
+                  right: 40,
+                  bottom: 20,
+                  top: 10,
+                ),
+                child: Row(children: [
+                  Expanded(
+                    child: CustomButtonWidget(
+                      onPressed: () {
+                        profileController.updateActiveStatus();
+                      },
+                      buttonText: 'yes_proceed'.tr,
+                    ),
+                  ),
+                  const SizedBox(width: Dimensions.paddingSizeDefault),
+                  Expanded(
+                    child: CustomButtonWidget(
+                      onPressed: () => Get.back(),
+                      buttonText: 'cancel'.tr,
+                      backgroundColor: Theme.of(context).disabledColor.withValues(alpha: 0.1),
+                      fontColor: Theme.of(context).disabledColor,
+                      isBorder: true,
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+          );
         } else {
-          profileController.updateActiveStatus();
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied ||
+              permission == LocationPermission.deniedForever ||
+              (GetPlatform.isIOS ? false : permission == LocationPermission.whileInUse)) {
+            _checkPermission(() => profileController.updateActiveStatus());
+          } else {
+            profileController.updateActiveStatus();
+          }
         }
       }
+    } finally {
+      _isSyncing = false;
     }
   }
 
