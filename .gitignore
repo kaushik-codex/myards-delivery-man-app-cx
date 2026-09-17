@@ -67,3 +67,6 @@ ios/GoogleService-Info.plist
 *.key
 key.properties
 
+# Progress and Design Documentation
+MyProgress/
+[Dd][Ee][Ss][Ii][Gg][Nn].[Mm][Dd]
