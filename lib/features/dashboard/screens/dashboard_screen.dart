@@ -66,7 +66,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       isRideActive
           ? RideOrderScreen()
           : const OrderScreen(),
-      const ProfileScreen(),
+      ProfileScreen(onBack: () => _setPage(0)),
     ];
 
     showDisbursementWarningMessage();
