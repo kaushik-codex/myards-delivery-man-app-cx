@@ -14,13 +14,44 @@ import 'package:sixam_mart_delivery/util/enums.dart';
 import 'package:sixam_mart_delivery/util/images.dart';
 import 'package:sixam_mart_delivery/util/styles.dart';
 
-class OnlineStatusToggleWidget extends StatelessWidget {
-  const OnlineStatusToggleWidget({super.key});
+import 'package:sixam_mart_delivery/util/color_resources.dart';
 
+class OnlineStatusToggleWidget extends StatefulWidget {
+  final bool isFloatingCapsule;
+  const OnlineStatusToggleWidget({super.key, this.isFloatingCapsule = false});
+
+  @override
+  State<OnlineStatusToggleWidget> createState() => _OnlineStatusToggleWidgetState();
+}
+
+class _OnlineStatusToggleWidgetState extends State<OnlineStatusToggleWidget> with SingleTickerProviderStateMixin {
   static bool _isSyncing = false;
+  late AnimationController _breathingController;
+  late Animation<double> _breathingAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _breathingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500),
+    );
+    _breathingAnimation = Tween<double>(begin: 0.97, end: 1.0).animate(
+      CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
+    );
+    _breathingController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _breathingController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
+
     return GetBuilder<ProfileController>(builder: (profileController) {
       return GetBuilder<RideController>(builder: (rideController) {
         return GetBuilder<OrderController>(builder: (orderController) {
@@ -31,80 +62,228 @@ class OnlineStatusToggleWidget extends StatelessWidget {
           final bool isOnline = profileController.profileModel!.active == 1;
           final bool isLoading = profileController.isActiveStatusLoading;
 
-          return InkWell(
-            onTap: isLoading ? null : () => _handleToggle(context, profileController, rideController, orderController),
-            borderRadius: BorderRadius.circular(20),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              width: 80,
-              height: 28,
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                color: isOnline ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: isOnline ? Alignment.centerLeft : Alignment.centerRight,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: isOnline ? 6 : 0,
-                        right: isOnline ? 0 : 6,
-                      ),
-                      child: Text(
-                        isOnline ? 'online'.tr : 'offline'.tr,
-                        style: robotoMedium.copyWith(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ),
+          if (widget.isFloatingCapsule) {
+            return _buildFloatingCapsule(
+              context: context,
+              isDark: isDark,
+              isOnline: isOnline,
+              isLoading: isLoading,
+              profileController: profileController,
+              rideController: rideController,
+              orderController: orderController,
+            );
+          }
 
-                  AnimatedAlign(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    alignment: isOnline ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 2,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: isLoading
-                          ? Center(
-                              child: SizedBox(
-                                width: 13,
-                                height: 13,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    isOnline ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          return _buildLegacyToggle(
+            context: context,
+            isOnline: isOnline,
+            isLoading: isLoading,
+            profileController: profileController,
+            rideController: rideController,
+            orderController: orderController,
           );
         });
       });
     });
+  }
+
+  Widget _buildFloatingCapsule({
+    required BuildContext context,
+    required bool isDark,
+    required bool isOnline,
+    required bool isLoading,
+    required ProfileController profileController,
+    required RideController rideController,
+    required OrderController orderController,
+  }) {
+    final Color capsuleBg = isOnline
+        ? (isDark ? ColorResources.redDeep : ColorResources.myardsRed)
+        : Theme.of(context).cardColor;
+
+    final Color borderColor = isOnline
+        ? (isDark ? ColorResources.redDeep : ColorResources.myardsRed)
+        : (isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine);
+
+    final Widget capsuleBody = Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: capsuleBg,
+        borderRadius: BorderRadius.circular(500),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? const Color(0x4D000000) : const Color(0x1F1B211D),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            isOnline ? 'online'.tr.toUpperCase() : 'offline'.tr.toUpperCase(),
+            style: TextStyle(
+              color: isOnline
+                  ? Colors.white
+                  : (isDark ? ColorResources.nightMuted : ColorResources.mutedOliveGrey),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 38,
+            height: 24,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: isOnline
+                  ? Colors.black.withValues(alpha: 0.22)
+                  : (isDark ? ColorResources.nightSurfaceRaised : ColorResources.canvasMist),
+              borderRadius: BorderRadius.circular(500),
+              border: isOnline
+                  ? null
+                  : Border.all(
+                      color: isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine,
+                      width: 0.8,
+                    ),
+            ),
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: isOnline ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: isOnline
+                      ? Colors.white
+                      : (isDark ? ColorResources.nightInk : ColorResources.inkCharcoal),
+                  shape: BoxShape.circle,
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1)),
+                  ],
+                ),
+                child: isLoading
+                    ? Center(
+                        child: SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isOnline ? ColorResources.myardsRed : Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isLoading ? null : () => _handleToggle(context, profileController, rideController, orderController),
+        borderRadius: BorderRadius.circular(500),
+        child: (isOnline && !isLoading)
+            ? AnimatedBuilder(
+                animation: _breathingAnimation,
+                builder: (context, child) => Opacity(
+                  opacity: _breathingAnimation.value,
+                  child: child,
+                ),
+                child: capsuleBody,
+              )
+            : capsuleBody,
+      ),
+    );
+  }
+
+  Widget _buildLegacyToggle({
+    required BuildContext context,
+    required bool isOnline,
+    required bool isLoading,
+    required ProfileController profileController,
+    required RideController rideController,
+    required OrderController orderController,
+  }) {
+    return InkWell(
+      onTap: isLoading ? null : () => _handleToggle(context, profileController, rideController, orderController),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        width: 80,
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        decoration: BoxDecoration(
+          color: isOnline ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: isOnline ? Alignment.centerLeft : Alignment.centerRight,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: isOnline ? 6 : 0,
+                  right: isOnline ? 0 : 6,
+                ),
+                child: Text(
+                  isOnline ? 'online'.tr : 'offline'.tr,
+                  style: robotoMedium.copyWith(
+                    color: Colors.white,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              alignment: isOnline ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: isLoading
+                    ? Center(
+                        child: SizedBox(
+                          width: 13,
+                          height: 13,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isOnline ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _handleToggle(

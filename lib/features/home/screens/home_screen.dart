@@ -22,7 +22,8 @@ import 'package:sixam_mart_delivery/features/ride_module/trip/controllers/trip_c
 import 'package:sixam_mart_delivery/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart_delivery/helper/route_helper.dart';
 import 'package:sixam_mart_delivery/util/app_constants.dart';
-import 'package:sixam_mart_delivery/features/home/widgets/online_status_toggle_widget.dart';
+import 'package:sixam_mart_delivery/common/widgets/custom_image_widget.dart';
+import 'package:sixam_mart_delivery/util/color_resources.dart';
 import 'package:sixam_mart_delivery/util/dimensions.dart';
 import 'package:sixam_mart_delivery/util/enums.dart';
 import 'package:sixam_mart_delivery/util/images.dart';
@@ -35,8 +36,9 @@ import 'package:sixam_mart_delivery/helper/floating_overlay_helper.dart';
 import 'package:sixam_mart_delivery/features/delivery_module/order/domain/models/order_model.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.onNavigateToOrders});
+  const HomeScreen({super.key, this.onNavigateToOrders, this.onNavigateToProfile});
   final Function()? onNavigateToOrders;
+  final Function()? onNavigateToProfile;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -257,51 +259,142 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return GetBuilder<ProfileController>(builder: (profileController){
 
+      final bool isDark = Theme.of(context).brightness == Brightness.dark;
       bool isRideActive = AppConstants.appMode == AppMode.ride;
 
       return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).cardColor,
-          surfaceTintColor: Theme.of(context).cardColor,
-          shadowColor: Theme.of(context).disabledColor.withValues(alpha: 0.5),
-          elevation: 2,
-          leading: Padding(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-            child: Image.asset(Images.logo, height: 30, width: 30),
-          ),
-          titleSpacing: 0,
-          title: Text(AppConstants.appName, maxLines: 1, overflow: TextOverflow.ellipsis, style: robotoMedium.copyWith(
-            color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeDefault,
-          )),
-          actions: [
-            const Center(child: OnlineStatusToggleWidget()),
-            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-            if (kDebugMode)
-              IconButton(
-                icon: Icon(Icons.picture_in_picture_alt, size: 24, color: Theme.of(context).primaryColor),
-                tooltip: 'Test Floating Overlay',
-                onPressed: () => _testFloatingOverlay(),
-              ),
-            IconButton(
-              icon: GetBuilder<NotificationController>(builder: (notificationController) {
-                return Stack(children: [
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: SafeArea(
+            top: true,
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Container(
+                  height: 56,
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 1. Left: 44 px Circular Profile Avatar Button
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: widget.onNavigateToProfile,
+                          borderRadius: BorderRadius.circular(500),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Theme.of(context).cardColor,
+                              border: Border.all(
+                                color: isDark
+                                    ? ColorResources.nightStructuralLine
+                                    : ColorResources.structuralLine,
+                                width: 1,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: (profileController.profileModel?.imageFullUrl != null &&
+                                      profileController.profileModel!.imageFullUrl!.isNotEmpty)
+                                  ? CustomImageWidget(
+                                      image: profileController.profileModel!.imageFullUrl!,
+                                      height: 44,
+                                      width: 44,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.asset(
+                                      Images.placeholder,
+                                      height: 44,
+                                      width: 44,
+                                      fit: BoxFit.cover,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
 
-                  Icon(Icons.notifications, size: 25, color: Theme.of(context).textTheme.bodyLarge!.color),
+                      // 2. Center: Centered Logo with kDebugMode long-press
+                      GestureDetector(
+                        onLongPress: kDebugMode ? () => _testFloatingOverlay() : null,
+                        child: Container(
+                          width: 104,
+                          height: 44,
+                          alignment: Alignment.center,
+                          child: Image.asset(
+                            Images.logo,
+                            height: 28,
+                            width: 100,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
 
-                  notificationController.hasNotification ? Positioned(top: 0, right: 0, child: Container(
-                    height: 10, width: 10, decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error, shape: BoxShape.circle,
-                    border: Border.all(width: 1, color: Theme.of(context).cardColor),
+                      // 3. Right: 44 px Circular Notification Button with 8 px Alert Red dot
+                      GetBuilder<NotificationController>(
+                        builder: (notificationController) {
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Get.toNamed(RouteHelper.getNotificationRoute()),
+                              borderRadius: BorderRadius.circular(500),
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Theme.of(context).cardColor,
+                                  border: Border.all(
+                                    color: isDark
+                                        ? ColorResources.nightStructuralLine
+                                        : ColorResources.structuralLine,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_none_rounded,
+                                      size: 22,
+                                      color: isDark
+                                          ? ColorResources.nightInk
+                                          : ColorResources.inkCharcoal,
+                                    ),
+                                    if (notificationController.hasNotification)
+                                      Positioned(
+                                        top: 9,
+                                        right: 9,
+                                        child: Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: ColorResources.alertRed,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Theme.of(context).cardColor,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  )) : const SizedBox(),
-
-                ]);
-              }),
-              onPressed: () => Get.toNamed(RouteHelper.getNotificationRoute()),
+                ),
+              ),
             ),
-
-            const SizedBox(width: Dimensions.paddingSizeSmall),
-          ],
+          ),
         ),
 
         body: RefreshIndicator(

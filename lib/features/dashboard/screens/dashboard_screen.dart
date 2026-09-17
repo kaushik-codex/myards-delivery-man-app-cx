@@ -13,7 +13,6 @@ import 'package:sixam_mart_delivery/main.dart';
 import 'package:sixam_mart_delivery/util/app_constants.dart';
 import 'package:sixam_mart_delivery/util/dimensions.dart';
 import 'package:sixam_mart_delivery/common/widgets/custom_alert_dialog_widget.dart';
-import 'package:sixam_mart_delivery/features/dashboard/widgets/bottom_nav_item_widget.dart';
 import 'package:sixam_mart_delivery/features/dashboard/widgets/new_request_dialog_widget.dart';
 import 'package:sixam_mart_delivery/features/home/screens/home_screen.dart';
 import 'package:sixam_mart_delivery/features/profile/screens/profile_screen.dart';
@@ -23,8 +22,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart_delivery/features/dashboard/widgets/floating_nav_capsule_widget.dart';
+import 'package:sixam_mart_delivery/features/home/widgets/online_status_toggle_widget.dart';
 import 'package:sixam_mart_delivery/util/enums.dart';
-import 'package:sixam_mart_delivery/util/images.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int pageIndex;
@@ -56,7 +56,10 @@ class DashboardScreenState extends State<DashboardScreen> {
     _pageController = PageController(initialPage: widget.pageIndex);
 
     _screens = [
-      HomeScreen(onNavigateToOrders: () => _setPage(2)),
+      HomeScreen(
+        onNavigateToOrders: () => _setPage(2),
+        onNavigateToProfile: () => _setPage(3),
+      ),
       isRideActive
           ? RideRequestScreen(onTap: () => _setPage(0))
           : OrderRequestScreen(onTap: () => _setPage(0)),
@@ -155,22 +158,43 @@ class DashboardScreenState extends State<DashboardScreen> {
         }
       },
       child: Scaffold(
-        bottomNavigationBar: GetPlatform.isDesktop ? const SizedBox() : Container(
-          height: 70 + MediaQuery.of(context).padding.bottom,
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            boxShadow: [BoxShadow(color: Colors.grey[Get.isDarkMode ? 800 : 200]!, spreadRadius: 1, blurRadius: 5)],
-          ),
-          padding: EdgeInsets.only(top: 14),
-          child: Row(children: [
-            BottomNavItemWidget(iconData: Images.home, label: 'home'.tr, isSelected: _pageIndex == 0, onTap: () => _setPage(0)),
-            BottomNavItemWidget(iconData: Images.request, label: 'request'.tr, isSelected: _pageIndex == 1, pageIndex: 1, onTap: () {
-              _navigateRequestPage();
-            }),
-            BottomNavItemWidget(iconData: Images.bag, label: isRideActive ? "history".tr : 'orders'.tr, isSelected: _pageIndex == 2, onTap: () => _setPage(2)),
-            BottomNavItemWidget(iconData: Images.userP, label: 'profile'.tr, isSelected: _pageIndex == 3, onTap: () => _setPage(3)),
-          ]),
-        ),
+        bottomNavigationBar: (GetPlatform.isDesktop || _pageIndex == 3)
+            ? const SizedBox()
+            : SizedBox(
+                height: 72 + MediaQuery.of(context).padding.bottom,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 14 + MediaQuery.of(context).padding.bottom,
+                    top: 2,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 640),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: FloatingNavCapsuleWidget(
+                              pageIndex: _pageIndex,
+                              onTap: (index) {
+                                if (index == 1) {
+                                  _navigateRequestPage();
+                                } else {
+                                  _setPage(index);
+                                }
+                              },
+                              isRideActive: isRideActive,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const OnlineStatusToggleWidget(isFloatingCapsule: true),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
         body: PageView.builder(
           controller: _pageController,
           itemCount: _screens.length,
