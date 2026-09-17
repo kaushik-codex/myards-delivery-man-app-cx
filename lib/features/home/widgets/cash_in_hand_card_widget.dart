@@ -16,18 +16,28 @@ class CashInHandCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool isPayable = profileController.profileModel != null && profileController.profileModel?.showPayNowButton == true;
 
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-        border: Border.all(color: Theme.of(context).disabledColor, width: 0.2),
-        boxShadow: [BoxShadow(color: Get.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05), blurRadius: 20, spreadRadius: 0, offset: const Offset(0, 5))],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine,
+          width: 1,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x121B211D),
+            blurRadius: 28,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeLarge),
-      margin: EdgeInsets.only(bottom: Dimensions.paddingSizeLarge, left: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault),
+      margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge, left: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault),
 
       child: Column(children: [
 
@@ -43,7 +53,10 @@ class CashInHandCardWidget extends StatelessWidget {
 
         Text(
           PriceConverterHelper.convertPrice(profileController.profileModel!.cashInHands),
-          style: robotoBold.copyWith(fontSize: Dimensions.fontSizeOverLarge),
+          style: jetBrainsMonoBold(
+            fontSize: Dimensions.fontSizeOverLarge,
+            color: isDark ? ColorResources.nightInk : ColorResources.inkCharcoal,
+          ),
         ),
         const SizedBox(height: Dimensions.paddingSizeSmall),
 

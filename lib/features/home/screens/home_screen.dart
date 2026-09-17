@@ -420,47 +420,73 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Stack(children: [
                 SingleChildScrollView(
-                  child: GetBuilder<ProfileController>(builder: (profileController) {
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 640),
+                      child: GetBuilder<ProfileController>(builder: (profileController) {
 
-                    var config = Get.find<SplashController>().configModel;
+                        var config = Get.find<SplashController>().configModel;
 
-                    bool showReferAndEarn = profileController.profileModel != null && profileController.profileModel!.earnings == 1
-                        && (isRideActive ? (config?.riderReferralData?.referalStatus ?? false) : (config?.dmReferralData?.referalStatus ?? false));
+                        bool showReferAndEarn = profileController.profileModel != null && profileController.profileModel!.earnings == 1
+                            && (isRideActive ? (config?.riderReferralData?.referalStatus ?? false) : (config?.dmReferralData?.referalStatus ?? false));
 
-                    bool addNewVehicle = profileController.profileModel?.vehicle == null || profileController.profileModel?.vehicle?.vehicleRequestStatus == "pending";
+                        bool addNewVehicle = profileController.profileModel?.vehicle == null || profileController.profileModel?.vehicle?.vehicleRequestStatus == "pending";
 
-                    bool showEarningWidget = profileController.profileModel != null && profileController.profileModel!.earnings == 1;
+                        bool showEarningWidget = profileController.profileModel != null && profileController.profileModel!.earnings == 1;
 
-                    bool showCashInHandCard = profileController.profileModel != null && profileController.profileModel!.cashInHands! > 0;
+                        bool showCashInHandCard = profileController.profileModel != null && profileController.profileModel!.cashInHands! > 0;
 
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+                          child: Column(children: [
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-                      child: Column( children: [
+                            if(isRideActive)...[
+                             addNewVehicle
+                                 ? VehicleAddWidget(vehicle: profileController.profileModel?.vehicle)
+                                 : ActiveRideWidget(),
+                            ] else...[
+                              ActiveOrderWidget(onNavigateToOrders: ()=> Get.offAll(DashboardScreen(pageIndex: 2)))
+                            ],
 
-                        if(isRideActive)...[
-                         addNewVehicle
-                             ? VehicleAddWidget(vehicle: profileController.profileModel?.vehicle)
-                             : ActiveRideWidget(),
-                        ] else...[
-                          ActiveOrderWidget(onNavigateToOrders: ()=> Get.offAll(DashboardScreen(pageIndex: 2)))
-                        ],
+                            if(showEarningWidget) HomeEarningWidget(profileController: profileController,),
 
-                        if(showEarningWidget) HomeEarningWidget(profileController: profileController,),
+                            isRideActive
+                                ? RideOrderCountWidget(profileController: profileController)
+                                : OrderCountWidget(profileController: profileController),
 
-                        isRideActive
-                            ? RideOrderCountWidget(profileController: profileController)
-                            : OrderCountWidget(profileController: profileController),
+                            isRideActive ? RideActivityView() : const SizedBox(),
 
-                        isRideActive ? RideActivityView() : SizedBox(),
+                            if(showCashInHandCard) CashInHandCardWidget(profileController: profileController),
 
-                        if(showCashInHandCard) CashInHandCardWidget(profileController: profileController),
+                            if(showReferAndEarn) ReferralCardWidget(),
 
-                        if(showReferAndEarn) ReferralCardWidget()
+                            // Reserved Animation Zone (bottom half): Deliberately empty future animation stage (min 34dvh), clean Canvas Mist surface with subtle road-lane baseline
+                            Container(
+                              constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height * 0.34),
+                              width: double.infinity,
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: (isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine).withValues(alpha: 0.35),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
 
-                      ]),
-                    );
-                  }),
+                            // Bottom clearance for floating bottom navigation capsules
+                            SizedBox(height: 72 + MediaQuery.of(context).padding.bottom),
+
+                          ]),
+                        );
+                      }),
+                    ),
+                  ),
                 ),
 
                 if(isRideActive) RideMapNavigationWidget(),

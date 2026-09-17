@@ -1,4 +1,3 @@
-import 'package:sixam_mart_delivery/common/widgets/custom_card.dart';
 import 'package:sixam_mart_delivery/features/delivery_module/order/domain/models/order_model.dart';
 import 'package:sixam_mart_delivery/helper/route_helper.dart';
 import 'package:sixam_mart_delivery/util/color_resources.dart';
@@ -20,6 +19,7 @@ class OrderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     bool parcel = orderModel.orderType == 'parcel';
     bool prescriptio = (orderModel.prescriptionOrder ?? false);
 
@@ -30,8 +30,22 @@ class OrderWidget extends StatelessWidget {
           arguments: OrderDetailsScreen(orderId: orderModel.id, isRunningOrder: isRunningOrder, orderIndex: orderIndex),
         );
       },
-      child: CustomCard(
-        isBorder: true,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine,
+            width: 1,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x121B211D),
+              blurRadius: 28,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
         child: Column(children: [
 
           Container(
@@ -42,7 +56,7 @@ class OrderWidget extends StatelessWidget {
                 Text(parcel ? 'parcel'.tr : 'order'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor)),
 
                 Row(children: [
-                  Text('# ${orderModel.id} ', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault)),
+                  Text('# ${orderModel.id} ', style: jetBrainsMonoBold(fontSize: Dimensions.fontSizeDefault, color: isDark ? ColorResources.nightInk : ColorResources.inkCharcoal)),
 
                   parcel || prescriptio ? const SizedBox() : Text('(${orderModel.detailsCount} ${'item'.tr})', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall)),
                 ]),
@@ -112,14 +126,19 @@ class OrderWidget extends StatelessWidget {
 
             ]),
           ),
-          // Spacer(),
 
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeSmall),
             decoration: BoxDecoration(
-              color: Theme.of(context).disabledColor.withValues(alpha: 0.1),
+              color: isDark ? ColorResources.nightSurfaceRaised : const Color(0xFFF7FAF7),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(Dimensions.radiusDefault), bottomRight: Radius.circular(Dimensions.radiusDefault),
+                bottomLeft: Radius.circular(19), bottomRight: Radius.circular(19),
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine,
+                  width: 1,
+                ),
               ),
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -132,11 +151,11 @@ class OrderWidget extends StatelessWidget {
                 },
                 style: TextButton.styleFrom(
                   backgroundColor: Theme.of(context).cardColor,
-                  minimumSize: Size(100, 35),
+                  minimumSize: const Size(100, 38),
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                    side: BorderSide(color: Theme.of(context).disabledColor.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(color: isDark ? ColorResources.nightStructuralLine : ColorResources.structuralLine, width: 1),
                   ),
                 ),
                 child: Text(
@@ -144,7 +163,7 @@ class OrderWidget extends StatelessWidget {
                   style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeSmall),
                 ),
               ),
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 12.0),
 
               TextButton(
                 onPressed: () async {
@@ -170,11 +189,10 @@ class OrderWidget extends StatelessWidget {
                 },
                 style: TextButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
-                  minimumSize: Size(100, 35),
+                  minimumSize: const Size(100, 38),
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                    side: BorderSide(color: Theme.of(context).disabledColor.withValues(alpha: 0.5)),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 child: Row(children: [
